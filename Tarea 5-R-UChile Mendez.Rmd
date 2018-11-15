@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+***PREGUNTA 1***
+
+*Cargar las librerias*
+```{r echo=TRUE}
+library(quantmod)
+library(gridExtra)
+library(ggplot2)
+```
+
+Definir las fechas de inicio y fin
+```{r}
+start <- as.Date("2000-01-01")
+end <- as.Date("2018-08-01")
+```
+
+Cargar las bases de las acciones
+
+```{r include=FALSE}
+getSymbols("MSFT", src = "yahoo", from = start, to = end, periodicity = "monthly")
+getSymbols("AAPL", src = "yahoo", from = start, to = end, periodicity = "monthly")
+```
+
+Modificar el nombre de las columnas para facilitar el calculo
+
+```{r}
+colnames(MSFT)[1] <- "Open"
+colnames(MSFT)[2] <- "High"
+colnames(MSFT)[3] <- "Low"
+colnames(MSFT)[4] <- "Close"
+colnames(MSFT)[5] <- "Volumen"
+colnames(MSFT)[6] <- "Adjusted"
+
+colnames(AAPL)[1] <- "Open"
+colnames(AAPL)[2] <- "High"
+colnames(AAPL)[3] <- "Low"
+colnames(AAPL)[4] <- "Close"
+colnames(AAPL)[5] <- "Volumen"
+colnames(AAPL)[6] <- "Adjusted"
+
+```
+
+**Función Completa**
+
+```{r}
+retorno <- function(data) {
+  #Calculo del retorno sobre uno de los precios
+  Adjusted<- data$Adjusted
+  
+  #Calcular el valor de n
+  n <- length(Adjusted)
+  #Calcular el retorno
+  log_Adjusted <- diff(log(Adjusted), lag=1)
+  log_Adjusted <- na.omit(log_Adjusted)
+  #Mostrar el retorno
+  print(log_Adjusted)
+  
+  #Grafico de los retornos
+  grafico <- plot(log_Adjusted, col = "purple", lwd = 2, ylab = "Return",
+                  main = "Retornos")
+  
+  #Grafico de los retornos acumulados
+  
+  retorno_acumulado <- cumprod(1 + log_Adjusted)
+  retorno_acumulado <- na.omit(retorno_acumulado)
+  
+  grafico2 <- plot(retorno_acumulado, col = "green", lwd = 2, ylab = "Return",
+                   main = "Retornos Acumulados") 
+  
+  g <- list(grafico, grafico2)
+  
+  #Prueba JB
+  
+  log_Adjusted <- diff(log(Adjusted), lag=1)
+  log_Adjusted <- na.omit(log_Adjusted)
+  
+  #Skewness
+  skewness = ((sum(log_Adjusted) - mean(log_Adjusted))^3)/length(log_Adjusted)/
+    ((sum((log_Adjusted - mean(log_Adjusted))^2)/length(log_Adjusted)))^(3/2)
+  
+  skewness
+  
+  #Kurtosis
+  kurtosis = (sum((log_Adjusted - mean(log_Adjusted))^4)/length(log_Adjusted))/
+    ((sum((log_Adjusted - mean(log_Adjusted))^2)/length(log_Adjusted)))^2
+  
+  #Jarque Bera
+  jb = n*((skewness/6)+((kurtosis-3)^2)/24)
+  
+  print(jb)
+  
+  return(g)
+  
+}
+```
+
+***Aplicar la función***
+
+```{r}
+retorno(AAPL)
+```
+
+
